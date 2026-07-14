@@ -6,7 +6,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 DEST = os.path.join(os.path.dirname(__file__), 'model', 'gpt2')
 MODEL = 'gpt2'
 
-print(f'Downloading {MODEL} → {DEST}')
+print(f'Downloading {MODEL} -> {DEST}')
 AutoTokenizer.from_pretrained(MODEL).save_pretrained(DEST)
 AutoModelForCausalLM.from_pretrained(MODEL).save_pretrained(DEST)
 print('Done.')

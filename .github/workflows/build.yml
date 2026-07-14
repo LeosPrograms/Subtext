@@ -1,7 +1,8 @@
-name: Build
+name: Build installers
 
 on:
   push:
+    branches: [main, master]
     tags: ['v*']
   workflow_dispatch:
 
@@ -9,13 +10,8 @@ jobs:
   build:
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            artifact: Subtext-linux
-          - os: windows-latest
-            artifact: Subtext-windows
-          - os: macos-latest
-            artifact: Subtext-mac
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
@@ -26,30 +22,90 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install CPU-only PyTorch
+      # Install CPU-only PyTorch on Linux/Windows to avoid downloading ~2 GB of
+      # CUDA libraries that are not needed for a packaged desktop app.
+      - name: Install PyTorch (CPU-only, Linux & Windows)
+        if: runner.os != 'macOS'
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install dependencies
-        run: pip install transformers numpy pyinstaller
+        run: pip install -r requirements.txt pyinstaller
+
+      # Cache the downloaded model weights so they are only fetched once per
+      # runner OS. The key is fixed because the weights do not change between
+      # commits.
+      - name: Cache model weights
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: model/gpt2
+          key: model-gpt2-${{ runner.os }}-v1
 
       - name: Download model weights
+        if: steps.cache-model.outputs.cache-hit != 'true'
         run: python download_model.py
 
       - name: Build with PyInstaller
-        shell: bash
-        run: |
-          pyinstaller \
-            --onedir \
-            --windowed \
-            --name Subtext \
-            --add-data "model/gpt2:model/gpt2" \
-            --collect-all transformers \
-            --collect-all tokenizers \
-            --collect-all subtext \
-            app.py
+        run: pyinstaller subtext.spec
 
-      - uses: actions/upload-artifact@v4
+      # ── Platform-specific packaging ──────────────────────────────────────
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf Subtext-linux.tar.gz -C dist Subtext
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: tar -czf Subtext-macos.tar.gz -C dist Subtext.app
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist\Subtext -DestinationPath Subtext-windows.zip
+
+      # ── Upload build artifacts ───────────────────────────────────────────
+
+      - name: Upload artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: dist/Subtext/
+          name: Subtext-linux
+          path: Subtext-linux.tar.gz
           retention-days: 30
+
+      - name: Upload artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Subtext-macos
+          path: Subtext-macos.tar.gz
+          retention-days: 30
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Subtext-windows
+          path: Subtext-windows.zip
+          retention-days: 30
+
+  # When a version tag (e.g. v1.2.0) is pushed, create a GitHub Release and
+  # attach all three installers automatically.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Subtext-linux/Subtext-linux.tar.gz
+            Subtext-macos/Subtext-macos.tar.gz
+            Subtext-windows/Subtext-windows.zip
