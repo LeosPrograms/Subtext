@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: Subtext-linux
+          - os: windows-latest
+            artifact: Subtext-windows
+          - os: macos-latest
+            artifact: Subtext-mac
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: pip install transformers numpy pyinstaller
+
+      - name: Download model weights
+        run: python download_model.py
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: |
+          pyinstaller \
+            --onedir \
+            --windowed \
+            --name Subtext \
+            --add-data "model/gpt2:model/gpt2" \
+            --collect-all transformers \
+            --collect-all tokenizers \
+            --collect-all subtext \
+            app.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/Subtext/
+          retention-days: 30
