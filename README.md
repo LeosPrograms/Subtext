@@ -9,7 +9,7 @@ A linguistic steganography tool built for the end-user. It is designed to encryp
 
 1. **Clone the repository**
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/LeosPrograms/Subtext
    cd Subtext
    ```
 
