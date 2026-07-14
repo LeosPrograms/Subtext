@@ -1,6 +1,6 @@
 # Subtext
 
-Subtext is a linguistic steganography tool built for the end-user. It is designed to encrypt messages into intelligible text, that could passably be produced by a human. Unlike traditional linguistic steganographic methods, which encode messages into existing text by word substitution, it uses a local large language model to generate text that contains the encoded and compressed Stego (hidden message).
+A linguistic steganography tool built for the end-user. It is designed to encrypt messages into intelligible text, that could passably be produced by a human. Unlike traditional linguistic steganographic methods, which encode messages into existing text by word substitution, it uses a local large language model to generate text that contains the encoded and compressed Stego (hidden message).
 
 
 ## Setup
@@ -49,7 +49,7 @@ Subtext is an implementation of the arithmetic coding steganography algorithm gi
 
    Differences: It supports authentication and encryption of the inputs, but provides inferior data efficiency. It lacks a graphical user interface.
 
-- ** [Tomato](https://github.com/user1342/Tomato)**
+- **[Tomato](https://github.com/user1342/Tomato)**
 
    A llm-based steganography tool that uses minimum-entropy coupling.
 
