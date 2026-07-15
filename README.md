@@ -1,6 +1,6 @@
 # Subtext
 
-A linguistic steganography tool built for the end-user. It is designed to encrypt messages into intelligible text, that could passably be produced by a human. Unlike traditional linguistic steganographic methods, which encode messages into existing text by word substitution, it uses a local large language model to generate text that contains the encoded and compressed Stego (hidden message).
+A linguistic steganography tool built for the end-user. It is designed to encrypt messages into intelligible text, that could passably be produced by a human. Unlike traditional linguistic steganographic methods, which encode messages into existing text by word substitution, it uses a local large language model to generate text that contains the encoded and compressed stego (hidden message).
 
 
 ## Setup
