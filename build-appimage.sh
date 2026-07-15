@@ -51,7 +51,7 @@ fi
 
 # ── 5. Package as AppImage ────────────────────────────────────────────────────
 echo ">>> Creating AppImage..."
-ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" Subtext-x86_64.AppImage
+APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" Subtext-x86_64.AppImage
 
 echo ""
 echo "Done! Output: Subtext-x86_64.AppImage"
