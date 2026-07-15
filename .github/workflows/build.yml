@@ -49,8 +49,38 @@ jobs:
         run: pyinstaller subtext.spec
 
       # ── Platform-specific packaging ──────────────────────────────────────
-      # Linux and Windows produce a single standalone file — no packaging needed.
-      # macOS produces a .app bundle (a directory), so it must be zipped.
+
+      - name: Package (Linux — AppImage)
+        if: runner.os == 'Linux'
+        run: |
+          # Populate AppDir with the PyInstaller binary
+          cp dist/Subtext AppDir/Subtext
+          chmod +x AppDir/Subtext AppDir/AppRun
+
+          # Generate a placeholder icon if none exists
+          python3 - <<'PYEOF'
+          import pathlib, base64
+          p = pathlib.Path("AppDir/subtext.png")
+          if not p.exists():
+              try:
+                  from PIL import Image, ImageDraw
+                  img = Image.new("RGBA", (256, 256), (30, 30, 46, 255))
+                  ImageDraw.Draw(img).ellipse([32,32,224,224], fill=(137,180,250,255))
+                  img.save(str(p))
+              except ImportError:
+                  p.write_bytes(base64.b64decode(
+                      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+                      "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="))
+          PYEOF
+
+          # Download appimagetool
+          curl -fsSL -o appimagetool.AppImage \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+
+          # Build the AppImage (APPIMAGETOOL_EXTRACT_AND_RUN avoids needing FUSE on the runner)
+          APPIMAGETOOL_EXTRACT_AND_RUN=1 ARCH=x86_64 \
+            ./appimagetool.AppImage AppDir Subtext-x86_64.AppImage
 
       - name: Package (macOS)
         if: runner.os == 'macOS'
@@ -63,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Subtext-linux
-          path: dist/Subtext
+          path: Subtext-x86_64.AppImage
           retention-days: 30
 
       - name: Upload artifact (macOS)
@@ -99,6 +129,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            Subtext-linux/Subtext-linux.tar.gz
-            Subtext-macos/Subtext-macos.tar.gz
+            Subtext-linux/Subtext-x86_64.AppImage
+            Subtext-macos/Subtext-macos.zip
             Subtext-windows/Subtext-windows.zip

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Subtext
+Comment=Neural Steganography GUI
+Exec=Subtext
+Icon=subtext
+Type=Application
+Categories=Utility;
